@@ -45,7 +45,7 @@ async def registrar_libro(libro: Libro):
         "libro": libro
     }
 
-#Listar libros disponibles
+#Listar libros
 @app.get("/libros/")
 async def listar_libros():
     disponibles = [libro for libro in libros]

@@ -1,17 +1,22 @@
 #1. importaciones
-from fastapi import FastAPI,status,HTTPException
+from fastapi import FastAPI,status,HTTPException,Depends
 from typing import Optional
 import asyncio
 from pydantic import BaseModel,Field
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
 
+#**********************
 #2. Inicializaciones APP
+#**********************
 app= FastAPI(
     title=' Mi Primer API ',
     description="Yesenia Pintor Hernández",
     version= '1.0.0'
              )
-
+#**********************
 #BD ficticia 
+#**********************
 usuarios=[
     {"id":1,"nombre":"Yesenia","edad":23},
     {"id":2,"nombre":"Fernanda","edad":20},
@@ -23,7 +28,26 @@ class crear_usuario(BaseModel):
     nombre:str = Field(..., min_length=3,max_length=50,example="Juanita")
     edad:int = Field(..., ge=1,le=123,description="Edad valida entre 1 y 123")
 
+#**********************
+#Seguridad HTTP BASIC
+#**********************
+
+seguridad= HTTPBasic()
+
+def verificar_peticion(credenciales:HTTPBasicCredentials=Depends(seguridad)):
+    userAuth= secrets.compare_digest(credenciales.username,"yeseniap")
+    passAuth= secrets.compare_digest(credenciales.password,"123456")
+
+    if not(userAuth and passAuth ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales no Autorizadas"
+        )
+    return credenciales.username
+
+#**********************
 #3.Endpoints
+#**********************
 @app.get("/", tags=['Inicio'])
 async def holaMundo():
     return {"mensaje":"Hola mundo FASTAPI"}
@@ -58,8 +82,10 @@ async def consultaOp(id:Optional[int]=None):
         return {"Mensaje":"Usuario no encontrado"}
     else:
         return{"Aviso":"No se proporciono Id"}
-#
+
+#**********************
 # Endpoint Tipo GET   
+#**********************
 @app.get("/v1/usuarios/", tags=['CRUD_HTTP'])
 async def consultaT():
     return{
@@ -67,8 +93,9 @@ async def consultaT():
         "total": len(usuarios),
         "data":usuarios
     }
-
+#**********************
 #Endpoint Tipo post
+#**********************
 @app.post("/v1/usuarios/", tags=['CRUD_HTTP'], status_code=status.HTTP_201_CREATED)
 async def crear_usuario(usuario:crear_usuario):
     for usr in usuarios:
@@ -83,7 +110,9 @@ async def crear_usuario(usuario:crear_usuario):
         "usuario":usuario
     }
 
+#**********************
 #Endpoint Tipo PUT
+#**********************
 @app.put("/v1/usuarios/", tags=['CRUD_HTTP'])
 async def actualiza_usuario(usuario:dict):
     for index, usr in enumerate(usuarios):
@@ -98,15 +127,16 @@ async def actualiza_usuario(usuario:dict):
         status_code=400,
         detail="usuario no encontrado"
     )
-
+#**********************
 #Endpoint Tipo DELETE
+#**********************
 @app.delete("/v1/usuarios/", tags=['CRUD_HTTP'])
-async def elimina_usuario(id: int):
+async def elimina_usuario(id: int,userAuth:str=Depends(verificar_peticion)):
     for index, usr in enumerate(usuarios):
         if usr["id"] == id:
             usuario_eliminado = usuarios.pop(index)
             return {
-                "mensaje": "usuario eliminado correctamente",
+                "mensaje": f"usuario eliminado por {userAuth} ",
                 "status": "200",
                 "usuario": usuario_eliminado
             }
