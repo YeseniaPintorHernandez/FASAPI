@@ -1,18 +1,15 @@
 #**********************
 # CRUD Usuarios   
 #**********************
-
 from fastapi import status,HTTPException,Depends,APIRouter
 from app.data.database import usuarios
 from app.models.usarios import crear_usuario
 from app.security.auth import verificar_peticion
-
 routerU= APIRouter(
     prefix="/v1/usuarios",
     tags=['CRUD_HTTP']
 
 )
-
 #**********************
 # Endpoint Tipo GET   
 #**********************
