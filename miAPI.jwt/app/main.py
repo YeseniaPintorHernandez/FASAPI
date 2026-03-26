@@ -14,7 +14,7 @@ app= FastAPI(
     title=' Mi Primer API ',
     description="Yesenia Pintor Hernández",
     version= '1.0.0'
-             )
+            )
 
 SECRET_KEY = "mi_clave_secreta_super_segura"
 ALGORITHM = "HS256"

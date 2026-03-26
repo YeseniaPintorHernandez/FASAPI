@@ -5,6 +5,12 @@ from fastapi import status,HTTPException,Depends,APIRouter
 from app.data.database import usuarios
 from app.models.usarios import crear_usuario
 from app.security.auth import verificar_peticion
+
+
+from sqlalchemy.orm import Session
+from app.data.db import get_db
+from app.data.usuario import usuario as usuarioDB
+
 routerU= APIRouter(
     prefix="/v1/usuarios",
     tags=['CRUD_HTTP']
@@ -14,27 +20,26 @@ routerU= APIRouter(
 # Endpoint Tipo GET   
 #**********************
 @routerU.get("/")#Devuelve el total de usuarios y la lista
-async def consulta():
+async def leer_usuario(db:Session= Depends(get_db)):
+
+    queryUsuarios= db.query(usuarioDB).all()
     return{
         "status":"200",
-        "total": len(usuarios),
-        "data":usuarios
+        "total": len(queryUsuarios),
+        "usuarios":queryUsuarios
     }
 #**********************
 #Endpoint Tipo post
 #**********************
 @routerU.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_usuario(usuario:crear_usuario):
-    for usr in usuarios:
-        if usr["id"] == usuario.id:#validacion de ID duplicado 
-            raise HTTPException(#si el id existe
-                status_code=400,
-                detail=" El id ya existe"
-            )
-    usuarios.append(usuario)# si no existe se agrega a la lista
+async def crear_usuario(usuarioP:crear_usuario, db:Session= Depends(get_db)):
+    usuarioNuevo= usuarioDB(nombre= usuarioP.nombre, edad= usuarioP.edad)
+    db.add(usuarioNuevo)
+    db.commit()
+    db.refresh(usuarioNuevo)
     return{
         "mensaje":"usuario agregado",
-        "usuario":usuario
+        "usuario":usuarioP
     }
 
 #**********************
